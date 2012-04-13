@@ -1,1 +1,90 @@
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<style>
+  .wrong {
+    color: red;
+  }
+</style>
+<!-- <a href="http://www.hackcraft.net/web/datetime/">good page about UTC date format</a> -->
+<h1>Native</h1>
+<div id="native"></div>
+<h1>Fixed</h1>
+<div id="fixed"></div>
+<script>
 
+if (!Date.now) {
+  Date.now = function () {
+    return -1;
+  };
+}
+if (!Date.prototype.getYear) {
+  Date.prototype.getYear = function () {
+    return -1;
+  };
+}
+if (!Date.prototype.setYear) {
+  Date.prototype.setYear = function () {
+    return -1;
+  };
+}
+if (!Date.prototype.toISOString) {
+  Date.prototype.toISOString = function () {
+    return '';
+  };
+}
+
+var container = document.getElementById('native');
+
+var path = [];
+
+function describe(title, f) {
+  path.push(title);
+  try {
+    f();
+  } catch (e) {
+
+  }
+  path.pop();
+}
+
+function it(title, f) {
+  path.push(title);
+  try {
+    f();
+  } catch (e) {
+  }
+  path.pop();
+}
+
+var counter = 0;
+
+function expect(a) {
+  counter += 1;
+  function toBe(b) {
+    var s = counter + ') ' + path.join(' - ') + ', result: "' + a + '", exptected: "' + b + '"';
+    var x = document.createElement('div');
+    container.appendChild(x);
+    if (b !== a) {
+      //s += '<pre>' + (new Error()).stack + '</pre>';
+      x.className = 'wrong';
+    }
+    x.innerHTML = s;
+  }
+  return {
+    toBe: toBe,
+    toBeFalsy: function () {
+      a = !a;
+      return toBe(true);
+    }
+  };
+}
+
+</script>
+<script src="s-date.js"></script>
+<script src="date-shim.js"></script>
+<script>
+  counter = 0;
+  container = document.getElementById('fixed');
+</script>
+<script src="s-date.js"></script>
+<script>
+</script>
