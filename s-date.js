@@ -173,4 +173,9 @@ describe('Date', function () {
       expect(new Date(0).setUTCDate(10.5)).toBe(777600000);
     });
 
+    // IE, Safari not "clips" result of Date.UTC, Date.parse
+    describe('Date.UTC(1e10)', function () {
+      expect(isNaN(Date.UTC(1e10))).toBe(true);
+    });
+
 });
