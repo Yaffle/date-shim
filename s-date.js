@@ -169,4 +169,8 @@ describe('Date', function () {
       expect(new Date(new Date(0).setFullYear(95)).getYear()).toBe(-1805);
     });
 
+    describe('new Date(0).setUTCDate(10.5)', function () {
+      expect(new Date(0).setUTCDate(10.5)).toBe(777600000);
+    });
+
 });
