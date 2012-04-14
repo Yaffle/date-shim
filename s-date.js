@@ -157,10 +157,6 @@ describe('Date', function () {
       expect(Date.prototype.constructor === Date).toBe(true);
     });
 
-    describe('new Date(NaN).toString()', function () {
-      expect(new Date(NaN).toString()).toBe('Invalid Date');
-    });
-
     describe('new Date(-3509827334573000).setUTCMonth(100)', function () {
       expect(new Date(new Date(-3509827334573000).setUTCMonth(100)).getTime()).toBe(-3509564419373000);
     });
@@ -176,6 +172,53 @@ describe('Date', function () {
     // IE, Safari not "clips" result of Date.UTC, Date.parse
     describe('Date.UTC(1e10)', function () {
       expect(isNaN(Date.UTC(1e10))).toBe(true);
+    });
+
+    // http://msdn.microsoft.com/en-us/library/ff960764(v=vs.85).aspx
+    // follow IE & FF behavior
+    describe('Date.UTC()', function () {
+      expect(Date.UTC()).toBe(-2208988800000); // "1900-01-01T00:00:00.000Z"
+    });
+    describe('Date.UTC(1900)', function () {
+      expect(Date.UTC(1900)).toBe(-2208988800000); // "1900-01-01T00:00:00.000Z"
+    });
+
+    // http://msdn.microsoft.com/en-us/library/ff960740(v=vs.85).aspx
+    describe('new Date(NaN).toUTCString()', function () {
+      var x = null;
+      try {
+        x = new Date(NaN).toUTCString();
+      } catch (e) {}
+      expect(x).toBe(null);// similar to toISOString ?
+    });
+    describe('new Date(0).toUTCString()', function () {
+      expect(new Date(0).toUTCString()).toBe("Thu, 01 Jan 1970 00:00:00 GMT");
+    });
+    describe('new Date(-1, 0).toUTCString()', function () {
+      var x = null;
+      try {
+        x = new Date(-62198776800000).toUTCString();
+      } catch (e) {}
+      expect(x).toBe(null);
+    });
+    describe('new Date(0).toUTCString()', function () {
+      expect(new Date(-62135618400000).toUTCString()).toBe("Sun, 31 Dec 0000 18:00:00 GMT");
+    });
+    describe('new Date(0).toUTCString()', function () {
+      expect(new Date(253373335200000).toUTCString()).toBe("Sat, 30 Jan 9999 18:00:00 GMT");
+    });
+
+    describe('new Date(253373335200000).setUTCSeconds(3)', function () {
+      expect(new Date(253373335200123).setUTCSeconds(3)).toBe(253373335203123);
+    });
+    describe('new Date(253373335200000).setUTCSeconds()', function () {
+      var x;
+      try {
+        x = isNaN(new Date(253373335200123).setUTCSeconds());
+      } catch (e) {
+        x = String(e);
+      }
+      expect(x).toBe(true);
     });
 
 });

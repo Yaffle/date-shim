@@ -2,11 +2,10 @@
 this.Date = (function (NativeDate) {
 
   var isoDateExpression = /^(\d{4}|[+\-]\d{6})(?:\-(\d{2})(?:\-(\d{2})(?:T(\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{3}))?)?(Z|(?:([\-\+])(\d{2}):(\d{2})))?)?)?)?$/,
-      utcDateExpression = /^(?:Sun|Mon|Tue|Wed|Thu|Fri|Sat),\s+(\d\d)\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(\d\d\d\d)\s+(\d\d)\:(\d\d)\:(\d\d)\s+GMT$/i,
+      utcDateExpression = /^(?:Sun|Mon|Tue|Wed|Thu|Fri|Sat),\s+(\d\d)\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(\d\d\d\d)\s+(\d\d)\:(\d\d)\:(\d\d)\s+(?:GMT|UTC)$/i,
       monthes = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365],
       weekDayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
       monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
-      nativeToString = NativeDate.prototype.toString,
       nativeParse = NativeDate.parse;
 
   function dayFromMonth(year, month) {
@@ -39,17 +38,10 @@ this.Date = (function (NativeDate) {
       t = Number(t);
       t -= t % 1; // ToInteger
       if (!(-8.64e15 <= t && t <= 8.64e15)) { // isFinite(t) && |t| < 8.64e15
-        if (w === 'toISOString') {
+        if (w === 'toISOString' || w === 'toUTCString') {
           throw new RangeError();
         }
-        if (w === 'toString') {
-          return 'Invalid Date';
-        }
         return NaN;
-      }
-
-      if (w === 'toString') {
-        return nativeToString.apply(this, arguments);
       }
 
       var timePart = (t % 86400000 + 86400000) % 86400000,
@@ -93,36 +85,55 @@ this.Date = (function (NativeDate) {
       }
 
       if (length) {
+        var argumentsLength = arguments.length;
         switch (w) {
           case 'setUTCDate':
             date = Number(arguments[0]);
             break;
           case 'setUTCMonth':
             month = Number(arguments[0]);
-            date = arguments.length < 2 ? date : Number(arguments[1]);
+            if (argumentsLength > 1) {
+              date = Number(arguments[1]);
+            }
             break;
           case 'setUTCFullYear':
             year = Number(arguments[0]);
-            month = arguments.length < 2 ? undefined : Number(arguments[1]);
-            date = arguments.length < 3 ? undefined : Number(arguments[2]);
+            if (argumentsLength > 1) {
+              month = Number(arguments[1]);
+              if (argumentsLength > 2) {
+                date = Number(arguments[2]);
+              }
+            }
             break;
           case 'setUTCMilliseconds':
             milliseconds = Number(arguments[0]);
             break;
           case 'setUTCSeconds':
             seconds = Number(arguments[0]);
-            milliseconds = arguments.length < 2 ? undefined : Number(arguments[1]);
+            if (argumentsLength > 1) {
+              milliseconds = Number(arguments[1]);
+            }
             break;
           case 'setUTCMinutes':
             minutes = Number(arguments[0]);
-            seconds = arguments.length < 2 ? undefined : Number(arguments[1]);
-            milliseconds = arguments.length < 3 ? undefined : Number(arguments[2]);
+            if (argumentsLength > 1) {
+              seconds = Number(arguments[1]);
+              if (argumentsLength > 2) {
+                milliseconds = Number(arguments[2]);
+              }
+            }
             break;
           case 'setUTCHours':
             hours = Number(arguments[0]);
-            minutes = arguments.length < 2 ? undefined : Number(arguments[1]);
-            seconds = arguments.length < 3 ? undefined : Number(arguments[2]);
-            milliseconds = arguments.length < 4 ? undefined : Number(arguments[3]);
+            if (argumentsLength > 1) {
+              minutes = Number(arguments[1]);
+              if (argumentsLength > 2) {
+                seconds = Number(arguments[2]);
+                if (argumentsLength > 3) {
+                  milliseconds =  Number(arguments[3]);
+                }
+              }
+            }
             break;
         }
         tmp = clipMakeDateTime(year, month, date - 1, hours, minutes, seconds, milliseconds);
@@ -132,6 +143,11 @@ this.Date = (function (NativeDate) {
 
       if (w === 'toUTCString') {
         if (year < 0 || year > 9999) {
+          // http://msdn.microsoft.com/en-us/library/ff960740(v=vs.85).aspx says 
+          // If YearFromTime(t) is greater than 0, this item is three or more digits from the value of YearFromTime(t),
+          // Otherwise, this item is the one or more numbers that correspond to the number that is 
+          // 1-YearFromTime(t) followed by a single space character and then followed by B.C.
+          // But this is not a valid RFC 1123 !?
           throw new RangeError();//!
         }
 
@@ -141,7 +157,7 @@ this.Date = (function (NativeDate) {
           (year < 10 ? '000' : (year < 100 ? '00' : (year < 1000 ? '0' : ''))) + year + ' ' +
           (hours < 10 ? '0' : '') + hours + ':' +
           (minutes < 10 ? '0' : '') + minutes + ':' +
-          (seconds < 10 ? '0' : '') + seconds + ' GMT';
+          (seconds < 10 ? '0' : '') + seconds + ' GMT';// GMT or UTC ?
       }
 
       yearString = String(year < 0 ? -year : year);
@@ -201,7 +217,7 @@ this.Date = (function (NativeDate) {
     var match = utcDateExpression.exec(string);
     if (match) {
       var day = Number(match[1]) - 1,
-          month = match[2].toLowerCase(),//!
+          month = match[2].slice(0, 1).toUpperCase() + match[2].slice(1).toLowerCase(),//!
           year = Number(match[3]),
           hour = Number(match[4]),
           minute = Number(match[5]),
@@ -209,7 +225,7 @@ this.Date = (function (NativeDate) {
           result,
           i;
       for (i = monthNames.length - 1; i >= 0; i -= 1) {
-        if (monthNames[i].toLowerCase() === month) {
+        if (monthNames[i] === month) {
           break;
         }
       }
@@ -283,8 +299,9 @@ this.Date = (function (NativeDate) {
   };
 
   NativeDate.UTC = function UTC(year, month, date, hours, minutes, seconds, milliseconds) {
+    // http://msdn.microsoft.com/en-us/library/ff960764(v=vs.85).aspx
     var argumentsLength = arguments.length;
-    year = argumentsLength < 1 ? 1970 : Number(year);
+    year = argumentsLength < 1 ? 0 : Number(year);
     month = argumentsLength < 2 ? 0 : Number(month);
     date = argumentsLength < 3 ? 1 : Number(date);
     hours = argumentsLength < 4 ? 0 : Number(hours);
@@ -317,7 +334,6 @@ this.Date = (function (NativeDate) {
 
   NativeDate.prototype.toISOString = createMethod('toISOString');
   NativeDate.prototype.toUTCString = createMethod('toUTCString');
-  NativeDate.prototype.toString = createMethod('toString');
 
   // deprecated:
   NativeDate.prototype.toGMTString = createMethod('toUTCString');
@@ -325,6 +341,7 @@ this.Date = (function (NativeDate) {
   NativeDate.prototype.getYear = function () {// IE 8
     return getFullYear.apply(this, arguments) - 1900;
   };
+
   //var setFullYear = NativeDate.prototype.setFullYear;
   //NativeDate.prototype.setYear - OK
 
@@ -342,7 +359,7 @@ this.Date = (function (NativeDate) {
         }
       } else {
         // depends on local offset and dst, so can't replace
-        year = argumentsLength < 1 ? 1970 : Number(year);
+        year = argumentsLength < 1 ? 0 : Number(year);
         month = argumentsLength < 2 ? 0 : Number(month);
         date = argumentsLength < 3 ? 1 : Number(date);
         hours = argumentsLength < 4 ? 0 : Number(hours);
