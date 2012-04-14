@@ -131,9 +131,6 @@ describe('Date', function () {
               it('parse(toString(' + d.toString() + '))', function () {
                 expect(Date.parse(d.toString())).toBe(t);
               });
-              it('parse(toLocaleString(' + d.toString() + '))', function () {
-                expect(Date.parse(d.toLocaleString())).toBe(t);
-              });
               it('parse(toUTCString(' + d.toUTCString() + '))', function () {
                 expect(Date.parse(d.toUTCString())).toBe(t);
               });
@@ -219,6 +216,33 @@ describe('Date', function () {
         x = String(e);
       }
       expect(x).toBe(true);
+    });
+
+    describe('new Date(-1e14).toString()', function () {
+      var s = "Thu Feb 15 -1199 20:13:20 GMT+0600";
+      expect(new Date(-1e14).toString()).toBe(s);
+    });
+    describe('new Date(1e15).toString()', function () {
+      var s = "Fri Sep 27 33658 07:46:40 GMT+0600";
+      expect(new Date(1e15).toString()).toBe(s);
+    });
+    describe('new Date((-0.6e14).toString()', function () {
+      var s = "Mon Sep 03 0068 19:20:00 GMT+0600";
+      expect(new Date(-0.6e14).toString()).toBe(s);
+    });
+    describe('new Date(-0.7e14).toString()', function () {
+      var s = "Sat Oct 16 -0249 01:33:20 GMT+0600";
+      expect(new Date(-0.7e14).toString()).toBe(s);
+    });
+
+    describe('new Date(-0.7e14).toTimeString()', function () {
+      var s = "01:33:20 GMT+0600";
+      expect(new Date(-0.7e14).toTimeString()).toBe(s);
+    });
+
+    describe('new Date(-0.7e14).toDateString()', function () {
+      var s = "Sat Oct 16 -0249";
+      expect(new Date(-0.7e14).toDateString()).toBe(s);
     });
 
 });

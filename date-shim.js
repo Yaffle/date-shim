@@ -3,6 +3,7 @@ this.Date = (function (NativeDate) {
 
   var isoDateExpression = /^(\d{4}|[+\-]\d{6})(?:\-(\d{2})(?:\-(\d{2})(?:T(\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{3}))?)?(Z|(?:([\-\+])(\d{2}):(\d{2})))?)?)?)?$/,
       utcDateExpression = /^(?:Sun|Mon|Tue|Wed|Thu|Fri|Sat),\s+(\d\d)\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(\d\d\d\d)\s+(\d\d)\:(\d\d)\:(\d\d)\s+(?:GMT|UTC)$/i,
+      stringDateExpression = /^(?:Sun|Mon|Tue|Wed|Thu|Fri|Sat)\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(\d+)\s+(\-?\d+)\s+(\d\d)\:(\d\d)\:(\d\d)\s+(?:GMT|UTC)([\+\-])(\d\d)(\d\d)$/i,
       monthes = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365],
       weekDayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
       monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
@@ -41,7 +42,16 @@ this.Date = (function (NativeDate) {
         if (w === 'toISOString' || w === 'toUTCString') {
           throw new RangeError();
         }
+        if (w === 'toString') {
+          return 'Invalid Date';
+        }
         return NaN;
+      }
+
+      var offset = 0;
+      if (w === 'toString' || w === 'toTimeString' || w === 'toDateString') {
+        offset = -new NativeDate(t).getTimezoneOffset() * 60000;//bugs?
+        t += offset;
       }
 
       var timePart = (t % 86400000 + 86400000) % 86400000,
@@ -141,6 +151,46 @@ this.Date = (function (NativeDate) {
         return tmp;
       }
 
+      var timeString;
+      var dateString;
+
+      if (w === 'toTimeString' || w === 'toString' || w === 'toDateString') {
+        var offsetHours = Math.floor((offset < 0 ? -offset : offset) / 3600000);
+        var offsetMinutes = Math.floor((offset < 0 ? -offset : offset) / 60000) % 60;
+
+        timeString = (hours < 10 ? '0' : '') + hours + ':' +
+          (minutes < 10 ? '0' : '') + minutes + ':' +
+          (seconds < 10 ? '0' : '') + seconds + ' GMT' +
+          (offset < 0 ? '-' : '+') +
+          (offsetHours < 10 ? '0' : '') + offsetHours +
+          (offsetMinutes < 10 ? '0' : '') + offsetMinutes;
+
+        yearString = String(year < 0 ? -year : year);
+        tmp = 4 - yearString.length;
+        while (tmp > 0) {
+          yearString = '0' + yearString;
+          tmp -= 1;
+        }
+
+        dateString = weekDayNames[day] + ' ' +
+          monthNames[month] + ' ' +
+          (date < 10 ? '0' : '') + date + ' ' +
+          (year < 0 ? '-' : '') + yearString;
+      }
+
+      if (w === 'toTimeString') {
+        return timeString;
+      }
+      
+      if (w === 'toDateString') {
+        return dateString;
+      }
+
+      if (w === 'toString') {
+        // Sat Oct 16 -0249 01:33:20 GMT+0600
+        return dateString + ' ' + timeString;
+      }
+
       if (w === 'toUTCString') {
         if (year < 0 || year > 9999) {
           // http://msdn.microsoft.com/en-us/library/ff960740(v=vs.85).aspx says 
@@ -197,15 +247,15 @@ this.Date = (function (NativeDate) {
           offset = !match[4] || match[8] ? 0 : 1,
           signOffset = match[9] === "-" ? 1 : -1,
           hourOffset = Number(match[10] || 0),
-          minuteOffset = Number(match[11] || 0),
-          result;
-      if (offset) {
-        return null; //!local offset not supported
-      }
+          minuteOffset = Number(match[11] || 0);
       if (hour < (minute > 0 || second > 0 || millisecond > 0 ? 24 : 25) && 
           minute < 60 && second < 60 && millisecond < 1000 && 
           month > -1 && month < 12 && hourOffset < 24 && minuteOffset < 60 && // detect invalid offsets
-          day > -1 && day < dayFromMonth(year, month + 1) - dayFromMonth(year, month)) {        
+          day > -1 && day < dayFromMonth(year, month + 1) - dayFromMonth(year, month)) {
+        if (offset) {
+          //!!!
+          return Number(new NativeDate(year, month, day + 1, hour + hourOffset * signOffset, minute + minuteOffset * signOffset, second, millisecond));
+        }
         return clipMakeDateTime(year, month, day, hour + hourOffset * signOffset, minute + minuteOffset * signOffset, second, millisecond);
       }
       return NaN;
@@ -222,7 +272,6 @@ this.Date = (function (NativeDate) {
           hour = Number(match[4]),
           minute = Number(match[5]),
           second = Number(match[6]),
-          result,
           i;
       for (i = monthNames.length - 1; i >= 0; i -= 1) {
         if (monthNames[i] === month) {
@@ -233,6 +282,34 @@ this.Date = (function (NativeDate) {
       if (hour < 24 && minute < 60 && second < 60 && 
           day > -1 && day < dayFromMonth(year, month + 1) - dayFromMonth(year, month)) {
         return clipMakeDateTime(year, month, day, hour, minute, second, 0);
+      }
+      return NaN;
+    }
+    return null;
+  }
+
+  function fromString(string) {
+    var match = stringDateExpression.exec(string);
+    if (match) {
+      var day = Number(match[2]) - 1,
+          month = match[1].slice(0, 1).toUpperCase() + match[1].slice(1).toLowerCase(),//!
+          year = Number(match[3]),
+          hour = Number(match[4]),
+          minute = Number(match[5]),
+          second = Number(match[6]),
+          signOffset = match[7] === "-" ? 1 : -1,
+          hourOffset = Number(match[8]),
+          minuteOffset = Number(match[9]),
+          i;
+      for (i = monthNames.length - 1; i >= 0; i -= 1) {
+        if (monthNames[i] === month) {
+          break;
+        }
+      }
+      month = i;
+      if (hour < 24 && minute < 60 && second < 60 && hourOffset < 24 && minuteOffset < 60 &&
+          day > -1 && day < dayFromMonth(year, month + 1) - dayFromMonth(year, month)) {
+        return clipMakeDateTime(year, month, day, hour + hourOffset * signOffset, minute + minuteOffset * signOffset, second, 0);
       }
       return NaN;
     }
@@ -281,17 +358,19 @@ this.Date = (function (NativeDate) {
 
   NativeDate.parse = function (s) {
     var x;
-    if (isoDateExpression.test(s)) {
-      x = fromISOString(s);
-      if (x !== null) {
-        return x;
-      }
+    x = fromISOString(s);
+    if (x !== null) {
+      return x;
     }
     x = fromUTCString(s);
-    if (x === null) {
-      return nativeParse.apply(this, arguments);
+    if (x !== null) {
+      return x;
     }
-    return x;
+    x = fromString(s);
+    if (x !== null) {
+      return x;
+    }
+    return nativeParse.apply(this, arguments);
   };
 
   NativeDate.now = function now() {
@@ -334,6 +413,10 @@ this.Date = (function (NativeDate) {
 
   NativeDate.prototype.toISOString = createMethod('toISOString');
   NativeDate.prototype.toUTCString = createMethod('toUTCString');
+
+  NativeDate.prototype.toString = createMethod('toString');
+  NativeDate.prototype.toTimeString = createMethod('toTimeString');
+  NativeDate.prototype.toDateString = createMethod('toDateString');
 
   // deprecated:
   NativeDate.prototype.toGMTString = createMethod('toUTCString');
