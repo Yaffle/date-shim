@@ -299,4 +299,9 @@ describe('Date', function () {
       expect(Date.parse('2070-01-01T00:00:00') - Date.parse('0070-01-01T00:00:00')).toBe(12622780800000 * 5);
     });
 
+    // Safari
+    describe("new Date(Date.parse('2070-01-01T00:00:00.000Z')).toISOString()", function () {
+      expect(new Date(Date.parse('2070-01-01T00:00:00.000Z')).toISOString()).toBe('2070-01-01T00:00:00.000Z');
+    });
+
 });
