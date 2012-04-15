@@ -65,7 +65,7 @@ this.Date = (function (NativeDate) {
       t = Number(t);
       t -= t % 1; // ToInteger
       if (!(-8.64e15 <= t && t <= 8.64e15)) { // isFinite(t) && |t| < 8.64e15
-        if (w === 'toISOString' || w === 'toUTCString') {
+        if (w === 'toISOString' || w === 'toUTCString' || w === 'toGMTString') {
           throw new RangeError();
         }
         if (w === 'toString') {
@@ -232,7 +232,7 @@ this.Date = (function (NativeDate) {
         return dateString + ' ' + timeString;
       }
 
-      if (w === 'toUTCString') {
+      if (w === 'toUTCString' || w === 'toGMTString') {
         if (year < 0 || year > 9999) {
           // http://msdn.microsoft.com/en-us/library/ff960740(v=vs.85).aspx says 
           // If YearFromTime(t) is greater than 0, this item is three or more digits from the value of YearFromTime(t),
@@ -481,7 +481,7 @@ this.Date = (function (NativeDate) {
   // toLocaleString, toLocaleDateString, toLocaleTimeString
 
   // deprecated:
-  NativeDate.prototype.toGMTString = createMethod('toUTCString');
+  NativeDate.prototype.toGMTString = createMethod('toGMTString');
   var getFullYear = NativeDate.prototype.getFullYear;
   NativeDate.prototype.getYear = function () {// IE 8
     return getFullYear.apply(this, arguments) - 1900;
