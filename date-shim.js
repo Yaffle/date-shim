@@ -14,7 +14,7 @@ this.Date = (function (NativeDate) {
     return monthes[month] + Math.floor((year - 1969 + t) / 4) - Math.floor((year - 1901 + t) / 100) + Math.floor((year - 1601 + t) / 400) + 365 * (year - 1970);
   }
 
-  function clipMakeDateTime(year, month, date, hour, minute, second, millisecond) {
+  function clipMakeDateTime(year, month, date, hour, minute, second, millisecond, utc) {
     date -= date % 1;
     month -= month % 1;
     year -= year % 1;
@@ -25,10 +25,36 @@ this.Date = (function (NativeDate) {
     year += Math.floor(month / 12);
     month = (month % 12 + 12) % 12;
     var t = ((((dayFromMonth(year, month) + date) * 24 + hour) * 60 + minute) * 60 + second) * 1000 + millisecond;
+    if (utc) {
+      return Number(new NativeDate(1970, 0, 1, 0, 0, 0, t));
+    }
     return -8.64e15 <= t && t <= 8.64e15 ? t : NaN;
   }
 
   function createMethod(w, length) {
+    var local = false;
+    switch (w) {
+      case 'getFullYear':
+      case 'getMonth':
+      case 'getDate':
+      case 'getHours':
+      case 'getMinutes':
+      case 'getSeconds':
+      case 'getMilliseconds':
+      case 'getDay':
+      case 'toString':
+      case 'toTimeString':
+      case 'toDateString':
+      case 'setFullYear':
+      case 'setMonth':
+      case 'setDate':
+      case 'setHours':
+      case 'setMinutes':
+      case 'setSeconds':
+      case 'setMilliseconds':
+        local = true;
+    }
+
     var result = function () {
       var t = this;
 
@@ -49,7 +75,7 @@ this.Date = (function (NativeDate) {
       }
 
       var offset = 0;
-      if (w === 'toString' || w === 'toTimeString' || w === 'toDateString') {
+      if (local) {
         offset = -new NativeDate(t).getTimezoneOffset() * 60000;//bugs?
         t += offset;
       }
@@ -84,28 +110,39 @@ this.Date = (function (NativeDate) {
       day = (t % 7 + 11) % 7;
 
       switch (w) {
+        case 'getFullYear':
         case 'getUTCFullYear': return year;
+        case 'getMonth':
         case 'getUTCMonth': return month;
+        case 'getDate':
         case 'getUTCDate': return date;
+        case 'getHours':
         case 'getUTCHours': return hours;
+        case 'getMinutes':
         case 'getUTCMinutes': return minutes;
+        case 'getSeconds':
         case 'getUTCSeconds': return seconds;
+        case 'getMilliseconds':
         case 'getUTCMilliseconds': return milliseconds;
+        case 'getDay':
         case 'getUTCDay': return day;
       }
 
       if (length) {
         var argumentsLength = arguments.length;
         switch (w) {
+          case 'setDate':
           case 'setUTCDate':
             date = Number(arguments[0]);
             break;
+          case 'setMonth':
           case 'setUTCMonth':
             month = Number(arguments[0]);
             if (argumentsLength > 1) {
               date = Number(arguments[1]);
             }
             break;
+          case 'setFullYear':
           case 'setUTCFullYear':
             year = Number(arguments[0]);
             if (argumentsLength > 1) {
@@ -115,15 +152,18 @@ this.Date = (function (NativeDate) {
               }
             }
             break;
+          case 'setMilliseconds':
           case 'setUTCMilliseconds':
             milliseconds = Number(arguments[0]);
             break;
+          case 'setSeconds':
           case 'setUTCSeconds':
             seconds = Number(arguments[0]);
             if (argumentsLength > 1) {
               milliseconds = Number(arguments[1]);
             }
             break;
+          case 'setMinutes':
           case 'setUTCMinutes':
             minutes = Number(arguments[0]);
             if (argumentsLength > 1) {
@@ -133,6 +173,7 @@ this.Date = (function (NativeDate) {
               }
             }
             break;
+          case 'setHours':
           case 'setUTCHours':
             hours = Number(arguments[0]);
             if (argumentsLength > 1) {
@@ -146,7 +187,7 @@ this.Date = (function (NativeDate) {
             }
             break;
         }
-        tmp = clipMakeDateTime(year, month, date - 1, hours, minutes, seconds, milliseconds);
+        tmp = clipMakeDateTime(year, month, date - 1, hours, minutes, seconds, milliseconds, local);
         this.setTime(tmp);
         return tmp;
       }
@@ -244,7 +285,7 @@ this.Date = (function (NativeDate) {
           millisecond = Number(match[7] || 0),
           // When time zone is missed, local offset should be used (ES 5.1 bug)
           // see https://bugs.ecmascript.org/show_bug.cgi?id=112
-          offset = !match[4] || match[8] ? 0 : 1,
+          localOffset = !match[4] || match[8] ? false : true,
           signOffset = match[9] === "-" ? 1 : -1,
           hourOffset = Number(match[10] || 0),
           minuteOffset = Number(match[11] || 0);
@@ -252,11 +293,7 @@ this.Date = (function (NativeDate) {
           minute < 60 && second < 60 && millisecond < 1000 && 
           month > -1 && month < 12 && hourOffset < 24 && minuteOffset < 60 && // detect invalid offsets
           day > -1 && day < dayFromMonth(year, month + 1) - dayFromMonth(year, month)) {
-        if (offset) {
-          //!!!
-          return Number(new NativeDate(year, month, day + 1, hour + hourOffset * signOffset, minute + minuteOffset * signOffset, second, millisecond));
-        }
-        return clipMakeDateTime(year, month, day, hour + hourOffset * signOffset, minute + minuteOffset * signOffset, second, millisecond);
+        return clipMakeDateTime(year, month, day, hour + hourOffset * signOffset, minute + minuteOffset * signOffset, second, millisecond, localOffset);
       }
       return NaN;
     }
@@ -394,6 +431,12 @@ this.Date = (function (NativeDate) {
     return clipMakeDateTime(year, month, date - 1, hours, minutes, seconds, milliseconds);
   };
 
+  //NativeDate.prototype.constructor - native
+  //NativeDate.prototype.valueOf - native
+  //NativeDate.prototype.getTime - native
+  //NativeDate.prototype.setTime - native
+  //NativeDate.prototype.getTimezoneOffset - native
+
   NativeDate.prototype.getUTCFullYear = createMethod('getUTCFullYear');
   NativeDate.prototype.getUTCMonth = createMethod('getUTCMonth');
   NativeDate.prototype.getUTCDate = createMethod('getUTCDate');
@@ -403,20 +446,39 @@ this.Date = (function (NativeDate) {
   NativeDate.prototype.getUTCMilliseconds = createMethod('getUTCMilliseconds');
   NativeDate.prototype.getUTCDay = createMethod('getUTCDay');
 
-  NativeDate.prototype.setUTCDate = createMethod('setUTCDate', 1);
-  NativeDate.prototype.setUTCMonth = createMethod('setUTCMonth', 2);
+  NativeDate.prototype.getFullYear = createMethod('getFullYear');
+  NativeDate.prototype.getMonth = createMethod('getMonth');
+  NativeDate.prototype.getDate = createMethod('getDate');
+  NativeDate.prototype.getHours = createMethod('getHours');
+  NativeDate.prototype.getMinutes = createMethod('getMinutes');
+  NativeDate.prototype.getSeconds = createMethod('getSeconds');
+  NativeDate.prototype.getMilliseconds = createMethod('getMilliseconds');
+  NativeDate.prototype.getDay = createMethod('getDay');
+
   NativeDate.prototype.setUTCFullYear = createMethod('setUTCFullYear', 3);
-  NativeDate.prototype.setUTCMilliseconds = createMethod('setUTCMilliseconds', 1);
-  NativeDate.prototype.setUTCSeconds = createMethod('setUTCSeconds', 2);
-  NativeDate.prototype.setUTCMinutes = createMethod('setUTCMinutes', 3);
+  NativeDate.prototype.setUTCMonth = createMethod('setUTCMonth', 2);
+  NativeDate.prototype.setUTCDate = createMethod('setUTCDate', 1);
   NativeDate.prototype.setUTCHours = createMethod('setUTCHours', 4);
+  NativeDate.prototype.setUTCMinutes = createMethod('setUTCMinutes', 3);
+  NativeDate.prototype.setUTCSeconds = createMethod('setUTCSeconds', 2);
+  NativeDate.prototype.setUTCMilliseconds = createMethod('setUTCMilliseconds', 1);
+
+  NativeDate.prototype.setFullYear = createMethod('setFullYear', 3);
+  NativeDate.prototype.setMonth = createMethod('setMonth', 2);
+  NativeDate.prototype.setDate = createMethod('setDate', 1);
+  NativeDate.prototype.setHours = createMethod('setHours', 4);
+  NativeDate.prototype.setMinutes = createMethod('setMinutes', 3);
+  NativeDate.prototype.setSeconds = createMethod('setSeconds', 2);
+  NativeDate.prototype.setMilliseconds = createMethod('setMilliseconds', 1);
 
   NativeDate.prototype.toISOString = createMethod('toISOString');
   NativeDate.prototype.toUTCString = createMethod('toUTCString');
 
   NativeDate.prototype.toString = createMethod('toString');
-  NativeDate.prototype.toTimeString = createMethod('toTimeString');
   NativeDate.prototype.toDateString = createMethod('toDateString');
+  NativeDate.prototype.toTimeString = createMethod('toTimeString');
+
+  // toLocaleString, toLocaleDateString, toLocaleTimeString
 
   // deprecated:
   NativeDate.prototype.toGMTString = createMethod('toUTCString');
@@ -424,7 +486,6 @@ this.Date = (function (NativeDate) {
   NativeDate.prototype.getYear = function () {// IE 8
     return getFullYear.apply(this, arguments) - 1900;
   };
-
   //var setFullYear = NativeDate.prototype.setFullYear;
   //NativeDate.prototype.setYear - OK
 

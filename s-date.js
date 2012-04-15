@@ -245,4 +245,58 @@ describe('Date', function () {
       expect(new Date(-0.7e14).toDateString()).toBe(s);
     });
 
+    var x48 = new Date(-694245600001); // "1948-01-01T17:59:59.999Z"
+    // Opera 10/11/12 bug
+    describe('new Date(Date.parse("-109252-01-01T17:59:59.999Z")).getFullYear()', function () {
+      // -109252-01-01T17:59:59.999Z
+      // eq  1948-01-01T17:59:59.999Z
+      expect(new Date(-3509827308000001).getFullYear()).toBe(-x48.getFullYear() + 1948 - 109252);
+    });
+    describe('new Date(Date.parse("-109252-01-01T17:59:59.999Z")).getYear()', function () {
+      // -109252-01-01T17:59:59.999Z
+      // eq  1948-01-01T17:59:59.999Z
+      expect(new Date(-3509827308000001).getYear()).toBe(-x48.getFullYear() + 1948 - 109252 - 1900);
+    });
+    describe('new Date(Date.parse("-109252-01-01T17:59:59.999Z")).getMonth()', function () {
+      // -109252-01-01T17:59:59.999Z
+      // eq  1948-01-01T17:59:59.999Z
+      expect(new Date(-3509827308000001).getMonth()).toBe(x48.getMonth());
+    });
+    describe('new Date(Date.parse("-109252-01-01T17:59:59.999Z")).getDate()', function () {
+      // -109252-01-01T17:59:59.999Z
+      // eq  1948-01-01T17:59:59.999Z
+      expect(new Date(-3509827308000001).getDate()).toBe(x48.getDate());
+    });
+    describe('new Date(Date.parse("-109252-01-01T17:59:59.999Z")).getDay()', function () {
+      // -109252-01-01T17:59:59.999Z
+      // eq  1948-01-01T17:59:59.999Z
+      expect(new Date(-3509827308000001).getDay()).toBe(x48.getDay());
+    });
+    describe('new Date(Date.parse("-109252-01-01T17:59:59.999Z")).getHours()', function () {
+      // -109252-01-01T17:59:59.999Z
+      expect(new Date(-3509827308000001).getHours()).toBe(x48.getHours());
+    });
+    describe('new Date(Date.parse("-109252-01-01T17:59:59.999Z")).getMinutes()', function () {
+      // -109252-01-01T17:59:59.999Z
+      expect(new Date(-3509827308000001).getMinutes()).toBe(x48.getMinutes());
+    });
+    describe('new Date(Date.parse("-109252-01-01T17:59:59.999Z")).getSeconds()', function () {
+      // -109252-01-01T17:59:59.999Z
+      expect(new Date(-3509827308000001).getSeconds()).toBe(x48.getSeconds());
+    });
+    describe('new Date(Date.parse("-109252-01-01T17:59:59.999Z")).getMilliseconds()', function () {
+      // -109252-01-01T17:59:59.999Z
+      expect(new Date(-3509827308000001).getMilliseconds()).toBe(x48.getMilliseconds());
+    });
+
+    // Opera 11.61
+    describe('new Date(Date.parse("-109252-01-01T17:59:59.999Z")).setFullYear(0)', function () {
+      // -109252-01-01T17:59:59.999Z
+      expect(new Date(-3509827308000001).setFullYear(0)).toBe(x48.setFullYear(0));
+    });
+
+    describe("Date.parse('2070-01-01T00:00:00') - Date.parse('0070-01-01T00:00:00')", function () {
+      expect(Date.parse('2070-01-01T00:00:00') - Date.parse('0070-01-01T00:00:00')).toBe(12622780800000 * 5);
+    });
+
 });
