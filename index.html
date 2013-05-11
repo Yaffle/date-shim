@@ -44,15 +44,18 @@ var path = [];
 
 function describe(title, f) {
   path.push(title);
+  if (beforeEachFunction !== null) {
+    beforeEachFunction();
+  }
   f();
   path.pop();
 }
 
 function it(title, f) {
-  path.push(title);
-  f();
-  path.pop();
+  describe(title, f);
 }
+
+var beforeEachFunction = null;
 
 var counter = 0;
 
@@ -73,8 +76,27 @@ function expect(a) {
     toBeFalsy: function () {
       a = !a;
       return toBe(true);
+    },
+    toBeDefined: function (x) {
+      a = a !== undefined;
+      return toBe(true);
+    },
+    toEqual: function (x) {
+      return toBe(x);
+    },
+    toMatch: function (re) {
+      a = re.test(a);
+      return toBe(true);
+    },
+    toBeTruthy: function () {
+      a = Boolean(a);
+      return toBe(true);
     }
   };
+}
+
+function beforeEach(c) {
+  beforeEachFunction = c;
 }
 
 </script>

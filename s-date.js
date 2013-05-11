@@ -25,6 +25,9 @@ describe('Date', function () {
             expect(Date.parse("2012-12-31T23:59:59.000Z")).toBe(1356998399000);   //1356998399000 1356998399000 1356998399000 1356998399000 1356998399000
             expect(Date.parse("2012-12-31T23:59:60.000Z")).toBeFalsy();           //NaN           NaN           NaN           NaN           1356998400000
             expect(Date.parse("2012-04-04T05:02:02.170Z")).toBe(1333515722170);   //1333515722170 1333515722170 1333515722170 1333515722170 1333515722170
+            expect(Date.parse("2012-04-04T05:02:02.170999Z")).toBe(1333515722170);   //1333515722170 1333515722170 1333515722170 1333515722170 1333515722170
+            expect(Date.parse("2012-04-04T05:02:02.17Z")).toBe(1333515722170);    //1333515722170 1333515722170 1333515722170 1333515722170 1333515722170
+            expect(Date.parse("2012-04-04T05:02:02.1Z")).toBe(1333515722100);     //1333515722170 1333515722170 1333515722170 1333515722170 1333515722170
             expect(Date.parse("2012-04-04T24:00:00.000Z")).toBe(1333584000000);   //NaN           1333584000000 1333584000000 1333584000000 1333584000000
             expect(Date.parse("2012-04-04T24:00:00.500Z")).toBeFalsy();           //NaN           NaN           1333584000500 1333584000500 NaN
             expect(Date.parse("2012-12-31T10:08:60.000Z")).toBeFalsy();           //NaN           NaN           NaN           NaN           1356948540000
@@ -67,8 +70,38 @@ describe('Date', function () {
 
             // When time zone is missed, local offset should be used (ES 5.1 bug)
             // see https://bugs.ecmascript.org/show_bug.cgi?id=112
-            var tzOffset = Number(new Date(1970, 0, 1, 0, 0, 0));
+            var tzOffset = Number(new Date(1970, 0));
             expect(Date.parse('1970-01-01T00:00:00')).toBe(tzOffset);             //tzOffset    0            0            0               NaN
+        });
+        it("should be able to coerce to a number", function(){
+            var actual = Number(new Date(1970, 0));
+            var expected = parseInt(actual, 10);
+            expect(actual).toBeDefined();
+            expect(actual).toEqual(expected);
+            expect(isNaN(actual)).toBeFalsy();
+        });
+    });
+
+    describe("toString", function(){
+        var actual = (new Date(1970, 0)).toString();
+        beforeEach(function(){
+            actual = (new Date(1970, 0)).toString();
+        });
+        it("should show correct date info for "+actual, function(){
+            expect(actual).toMatch(/1970/);
+            expect(actual).toMatch(/jan/i);
+            expect(actual).toMatch(/thu/i);
+            expect(actual).toMatch(/00:00:00/);
+        });
+    });
+
+    describe("valueOf", function(){
+        var actual = (new Date(1970, 0));
+        beforeEach(function(){
+            actual = (new Date(1970, 0)).valueOf();
+        });
+        it("should give an int value", function(){
+            expect(parseInt(actual, 10)).toBeTruthy();
         });
     });
 
