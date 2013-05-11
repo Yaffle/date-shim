@@ -3,7 +3,7 @@
 this.Date = (function (NativeDate) {
   "use strict";
 
-  var isoDateExpression = /^(\d{4}|[+\-]\d{6})(?:\-(\d{2})(?:\-(\d{2})(?:T(\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{3}))?)?(Z|(?:([\-\+])(\d{2}):(\d{2})))?)?)?)?$/;
+  var isoDateExpression = /^(\d{4}|[+\-]\d{6})(?:\-(\d{2})(?:\-(\d{2})(?:T(\d{2}):(\d{2})(?::(\d{2}(?:\.\d+)?))?(Z|(?:([\-\+])(\d{2}):(\d{2})))?)?)?)?$/;
   var utcDateExpression = /^(?:Sun|Mon|Tue|Wed|Thu|Fri|Sat),\s+(\d\d)\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(\d\d\d\d)\s+(\d\d)\:(\d\d)\:(\d\d)\s+(?:GMT|UTC)$/i;
   var stringDateExpression = /^(?:Sun|Mon|Tue|Wed|Thu|Fri|Sat)\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(\d+)\s+(\-?\d+)\s+(\d\d)\:(\d\d)\:(\d\d)\s+(?:GMT|UTC)([\+\-])(\d\d)(\d\d)$/i;
   var monthes = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365];
@@ -327,19 +327,18 @@ this.Date = (function (NativeDate) {
       var day = Number(match[3] || 1) - 1;
       var hour = Number(match[4] || 0);
       var minute = Number(match[5] || 0);
-      var second = Number(match[6] || 0);
-      var millisecond = Number(match[7] || 0);
+      var second = Number(match[6] || 0); // 59.12456
       // When time zone is missed, local offset should be used (ES 5.1 bug)
       // see https://bugs.ecmascript.org/show_bug.cgi?id=112
-      var localOffset = !match[4] || match[8] ? false : true;
-      var signOffset = match[9] === "-" ? 1 : -1;
-      var hourOffset = Number(match[10] || 0);
-      var minuteOffset = Number(match[11] || 0);
-      if (hour < (minute > 0 || second > 0 || millisecond > 0 ? 24 : 25) && 
-          minute < 60 && second < 60 && millisecond < 1000 && 
+      var localOffset = !match[4] || match[7] ? false : true;
+      var signOffset = match[8] === "-" ? 1 : -1;
+      var hourOffset = Number(match[9] || 0);
+      var minuteOffset = Number(match[10] || 0);
+      if (hour < (minute > 0 || second > 0 ? 24 : 25) && 
+          minute < 60 && second < 60 && 
           month > -1 && month < 12 && hourOffset < 24 && minuteOffset < 60 && // detect invalid offsets
           day > -1 && day < dayFromMonth(year, month + 1) - dayFromMonth(year, month)) {
-        return clipMakeDateTime(year, month, day, hour + hourOffset * signOffset, minute + minuteOffset * signOffset, second, millisecond, localOffset);
+        return clipMakeDateTime(year, month, day, hour + hourOffset * signOffset, minute + minuteOffset * signOffset, second, (second * 1000) % 1000, localOffset);
       }
       return NaN;
     }

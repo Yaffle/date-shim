@@ -37,6 +37,18 @@ if (!Date.prototype.toISOString) {
     return '';
   };
 }
+if (!Date.prototype.toJSON) {
+  Date.prototype.toJSON = function () {
+    return '';
+  };
+}
+if (!this.JSON) {
+  this.JSON = {
+    stringify: function (s) {
+      return String(s);
+    }
+  };
+}
 
 var container = document.getElementById('native');
 
