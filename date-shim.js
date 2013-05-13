@@ -531,7 +531,7 @@ this.Date = (function (NativeDate) {
   // Additional Properties:
   NativeDate.prototype.toGMTString = NativeDate.prototype.toUTCString;
   NativeDate.prototype.getYear = createMethod(GET_YEAR);
-  NativeDate.prototype.setYear = createMethod(SET_YEAR);
+  NativeDate.prototype.setYear = createMethod(SET_YEAR, 1);
 
   function D(year, month, date, hours, minutes, seconds, milliseconds) {
     var value = NaN;

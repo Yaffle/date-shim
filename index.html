@@ -45,7 +45,7 @@ if (!Date.prototype.toJSON) {
 if (!this.JSON) {
   this.JSON = {
     stringify: function (s) {
-      return String(s);
+      return (s && s.toJSON ? s.toJSON() : String(s));
     }
   };
 }

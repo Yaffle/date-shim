@@ -251,31 +251,27 @@ describe('Date', function () {
       expect(x).toBe(true);
     });
 
+    var stringDateExpression = /^(?:Sun|Mon|Tue|Wed|Thu|Fri|Sat)\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(\d+)\s+(\-?\d+)\s+(\d\d)\:(\d\d)\:(\d\d)\s+(?:GMT|UTC)([\+\-])(\d\d)(\d\d)$/i;
+
     describe('new Date(-1e14).toString()', function () {
-      var s = "Thu Feb 15 -1199 20:13:20 GMT+0600";
-      expect(new Date(-1e14).toString()).toBe(s);
+      expect(new Date(-1e14).toString()).toMatch(stringDateExpression);
     });
     describe('new Date(1e15).toString()', function () {
-      var s = "Fri Sep 27 33658 07:46:40 GMT+0600";
-      expect(new Date(1e15).toString()).toBe(s);
+      expect(new Date(1e15).toString()).toMatch(stringDateExpression);
     });
     describe('new Date((-0.6e14).toString()', function () {
-      var s = "Mon Sep 03 0068 19:20:00 GMT+0600";
-      expect(new Date(-0.6e14).toString()).toBe(s);
+      expect(new Date(-0.6e14).toString()).toMatch(stringDateExpression);
     });
     describe('new Date(-0.7e14).toString()', function () {
-      var s = "Sat Oct 16 -0249 01:33:20 GMT+0600";
-      expect(new Date(-0.7e14).toString()).toBe(s);
+      expect(new Date(-0.7e14).toString()).toMatch(stringDateExpression);
     });
 
     describe('new Date(-0.7e14).toTimeString()', function () {
-      var s = "01:33:20 GMT+0600";
-      expect(new Date(-0.7e14).toTimeString()).toBe(s);
+      expect("Thu Feb 15 -1199 " + (new Date(-0.7e14).toTimeString())).toMatch(stringDateExpression);
     });
 
     describe('new Date(-0.7e14).toDateString()', function () {
-      var s = "Sat Oct 16 -0249";
-      expect(new Date(-0.7e14).toDateString()).toBe(s);
+      expect((new Date(-0.7e14).toDateString()) + " 01:33:20 GMT+0600").toMatch(stringDateExpression);
     });
 
     var x48 = new Date(-694245600001); // "1948-01-01T17:59:59.999Z"
@@ -328,8 +324,8 @@ describe('Date', function () {
       expect(new Date(-3509827308000001).setFullYear(0)).toBe(x48.setFullYear(0));
     });
 
-    describe("Date.parse('2070-01-01T00:00:00') - Date.parse('0070-01-01T00:00:00')", function () {
-      expect(Date.parse('2070-01-01T00:00:00') - Date.parse('0070-01-01T00:00:00')).toBe(12622780800000 * 5);
+    describe("Date.parse('2070-01-01T00:00:00Z') - Date.parse('0070-01-01T00:00:00Z')", function () {
+      expect(Date.parse('2070-01-01T00:00:00Z') - Date.parse('0070-01-01T00:00:00Z')).toBe(12622780800000 * 5);
     });
 
     // Safari
