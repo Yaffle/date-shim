@@ -251,29 +251,6 @@ describe('Date', function () {
       expect(x).toBe(true);
     });
 
-    var stringDateExpression = /^(?:Sun|Mon|Tue|Wed|Thu|Fri|Sat)\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(\d+)\s+(\-?\d+)\s+(\d\d)\:(\d\d)\:(\d\d)\s+(?:GMT|UTC)([\+\-])(\d\d)(\d\d)$/i;
-
-    describe('new Date(-1e14).toString()', function () {
-      expect(new Date(-1e14).toString()).toMatch(stringDateExpression);
-    });
-    describe('new Date(1e15).toString()', function () {
-      expect(new Date(1e15).toString()).toMatch(stringDateExpression);
-    });
-    describe('new Date((-0.6e14).toString()', function () {
-      expect(new Date(-0.6e14).toString()).toMatch(stringDateExpression);
-    });
-    describe('new Date(-0.7e14).toString()', function () {
-      expect(new Date(-0.7e14).toString()).toMatch(stringDateExpression);
-    });
-
-    describe('new Date(-0.7e14).toTimeString()', function () {
-      expect("Thu Feb 15 -1199 " + (new Date(-0.7e14).toTimeString())).toMatch(stringDateExpression);
-    });
-
-    describe('new Date(-0.7e14).toDateString()', function () {
-      expect((new Date(-0.7e14).toDateString()) + " 01:33:20 GMT+0600").toMatch(stringDateExpression);
-    });
-
     var x48 = new Date(-694245600001); // "1948-01-01T17:59:59.999Z"
     // Opera 10/11/12 bug
     describe('new Date(Date.parse("-109252-01-01T17:59:59.999Z")).getFullYear()', function () {
