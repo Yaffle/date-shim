@@ -15,10 +15,23 @@ this.Date = (function (NativeDate) {
     return tv - new NativeDate(tv).getTimezoneOffset() * 60000;
   }
 
-  function UTC(tv) {
-    return new NativeDate(1970, 0, 1, 0, 0, 0, tv).getTime();
+  function UTC(localtime) {
+    //return new NativeDate(1970, 0, 1, 0, 0, 0, tv).getTime();
+    function offset(timestamp) {
+      return 0 - new Date(timestamp).getTimezoneOffset() * 60000;
+    }
+    // assume the timezone offset is between -24 hours and +24 hours
+    // assume the timezone has not more than one transition within 48 hours
+    var beforeTransitionDate = localtime - 24 * 60 * 60 * 1000;
+    var afterTransitionDate = localtime + 24 * 60 * 60 * 1000;
+    var oldOffset = offset(beforeTransitionDate);
+    var newOffset = offset(afterTransitionDate);
+    if (offset(localtime - Math.max(oldOffset, newOffset)) === oldOffset) { // localtime < transitionDate + Math.max(offset(transitionDate - 1), offset(transitionDate))
+      return new Date(localtime - oldOffset);
+    }
+    return new Date(localtime - newOffset);
   }
-  
+
   function pad(n, digits) {
     return digits.slice(0, digits.length - 1 - Math.floor(Math.log(Math.max(n, 1) + 0.5) / Math.log(10))) + n.toString();
   }
