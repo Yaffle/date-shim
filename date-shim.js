@@ -27,9 +27,9 @@ this.Date = (function (NativeDate) {
     var oldOffset = offset(beforeTransitionDate);
     var newOffset = offset(afterTransitionDate);
     if (offset(localtime - Math.max(oldOffset, newOffset)) === oldOffset) { // localtime < transitionDate + Math.max(offset(transitionDate - 1), offset(transitionDate))
-      return new Date(localtime - oldOffset);
+      return localtime - oldOffset;
     }
-    return new Date(localtime - newOffset);
+    return localtime - newOffset;
   }
 
   function pad(n, digits) {
